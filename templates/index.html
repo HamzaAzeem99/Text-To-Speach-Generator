@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" id="app-html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraTTS — Universal Voice Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1e38 100%);
+            --panel-bg: rgba(30, 41, 59, 0.45);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-primary: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-success: #10b981;
+            --card-active-border: #6366f1;
+            --input-bg: rgba(15, 23, 42, 0.6);
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            --panel-bg: rgba(255, 255, 255, 0.65);
+            --panel-border: rgba(15, 23, 42, 0.08);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent-primary: #4f46e5;
+            --accent-hover: #3730a3;
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --card-active-border: #4f46e5;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.2s, border-color 0.2s; }
+        body { background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; display: flex; }
+        
+        .app-container { display: flex; width: 100%; min-height: 100vh; }
+        .sidebar { width: 260px; background: var(--panel-bg); backdrop-filter: blur(20px); border-right: 1px solid var(--panel-border); padding: 2rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; }
+        body.rtl-mode .sidebar { border-right: none; border-left: 1px solid var(--panel-border); }
+        
+        .main-content { flex: 1; padding: 2.5rem; display: flex; flex-direction: column; max-width: 1400px; margin: 0 auto; width: 100%; }
+        
+        .logo-section { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { font-size: 1.5rem; }
+        .logo-section h2 { font-weight: 700; font-size: 1.25rem; }
+        
+        .top-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .header-text h1 { font-size: 1.75rem; }
+        .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem; }
+        
+        /* Language Toggle Switch */
+        .lang-switch-container { display: flex; background: var(--input-bg); padding: 0.35rem; border-radius: 14px; border: 1px solid var(--panel-border); gap: 0.25rem; }
+        .switch-btn { border: none; background: transparent; color: var(--text-muted); padding: 0.6rem 1.25rem; font-weight: 700; cursor: pointer; border-radius: 10px; font-size: 0.9rem; }
+        .switch-btn.active { background: var(--accent-primary); color: #ffffff; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+
+        .studio-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 2rem; align-items: start; }
+        .panel-card { background: var(--panel-bg); backdrop-filter: blur(20px); border: 1px solid var(--panel-border); border-radius: 24px; padding: 1.75rem; margin-bottom: 1.5rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2); }
+        .panel-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 1.25rem; }
+        
+        .panel-header-inline { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .engine-badge { font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: var(--accent-success); padding: 0.25rem 0.75rem; border-radius: 50px; font-weight: 600; }
+        
+        .voice-grid { display: flex; flex-direction: column; gap: 0.85rem; }
+        .voice-card { display: flex; align-items: center; gap: 1rem; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 16px; padding: 1rem; cursor: pointer; }
+        .voice-card:hover { border-color: rgba(99, 102, 241, 0.3); }
+        .voice-card.active { border-color: var(--card-active-border); background: rgba(99, 102, 241, 0.08); box-shadow: 0 0 12px rgba(99, 102, 241, 0.15); }
+        .voice-avatar { font-size: 1.75rem; background: var(--panel-border); padding: 0.5rem; border-radius: 12px; }
+        .voice-info { flex: 1; }
+        .voice-meta-header { display: flex; align-items: center; gap: 0.5rem; }
+        .voice-name { font-weight: 600; font-size: 0.95rem; }
+        .voice-gender { font-size: 0.75rem; text-transform: uppercase; color: var(--accent-primary); font-weight: 700; }
+        .voice-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
+        
+        .textarea-card { display: flex; flex-direction: column; padding: 1.5rem; }
+        .textarea-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .status-indicator { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+        .status-indicator.working { color: var(--accent-primary); }
+        
+        .utility-actions { display: flex; gap: 0.5rem; }
+        .util-btn { background: transparent; border: 1px solid var(--panel-border); color: var(--text-muted); padding: 0.4rem 0.75rem; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 500; }
+        .util-btn:hover { color: var(--text-main); background: var(--panel-border); }
+        
+        textarea { width: 100%; min-height: 250px; background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 16px; padding: 1.25rem; color: var(--text-main); font-size: 1.05rem; line-height: 1.6; resize: none; outline: none; }
+        textarea:focus { border-color: var(--accent-primary); }
+        
+        /* Urdu Text Mode Styles */
+        body.rtl-mode textarea { font-family: 'Noto Nastaliq Urdu', serif; font-size: 1.3rem; line-height: 2.2; text-align: right; direction: rtl; }
+        body.rtl-mode { direction: rtl; }
+        body.rtl-mode .voice-card { text-align: right; }
+        body.rtl-mode .voice-gender { margin-right: auto; margin-left: 0; }
+        body.rtl-mode .panel-title { text-align: right; }
+        body.rtl-mode .textarea-footer { direction: ltr; }
+        body.rtl-mode .playback-cluster { direction: ltr; }
+        body.rtl-mode .toast-container { right: auto; left: 2rem; text-align: right; }
+        body.rtl-mode .toast { border-right: 4px solid var(--accent-primary); border-left: none; }
+        
+        .textarea-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+        .counter-container { font-size: 0.8rem; color: var(--text-muted); }
+        
+        .waveform-loader { display: flex; gap: 3px; align-items: center; height: 20px; opacity: 0; }
+        .waveform-loader.active { opacity: 1; }
+        .waveform-loader span { width: 3px; height: 100%; background: var(--accent-primary); border-radius: 2px; animation: wave 1.2s ease-in-out infinite; }
+        .waveform-loader span:nth-child(2) { animation-delay: 0.15s; }
+        .waveform-loader span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes wave { 0%, 100% { height: 4px; } 50% { height: 20px; } }
+        
+        .media-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; width: 100%; }
+        .primary-btn, .secondary-btn, .control-btn { border: none; border-radius: 14px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .primary-btn { background: var(--accent-primary); color: #fff; padding: 0.95rem 1.75rem; font-size: 0.95rem; flex: 1; }
+        .primary-btn:hover { background: var(--accent-hover); }
+        .secondary-btn { background: var(--input-bg); border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.95rem 1.5rem; }
+        .secondary-btn:hover:not(:disabled) { background: var(--panel-border); }
+        .secondary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        .playback-cluster { display: flex; background: var(--input-bg); border: 1px solid var(--panel-border); padding: 0.35rem; border-radius: 14px; gap: 0.25rem; }
+        .control-btn { background: transparent; width: 44px; height: 44px; color: var(--text-main); border-radius: 10px; }
+        .control-btn:hover:not(:disabled) { background: var(--panel-border); color: var(--accent-primary); }
+        .control-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast { background: var(--panel-bg); backdrop-filter: blur(20px); border-left: 4px solid var(--accent-primary); padding: 1rem 1.5rem; border-radius: 8px; min-width: 280px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); color: var(--text-main); font-weight: 500; font-size: 0.9rem; animation: slideIn 0.3s ease forwards; }
+        @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .theme-btn { background: transparent; border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.6rem 1rem; border-radius: 10px; cursor: pointer; width: 100%; font-weight: 600; }
+        .app-footer { text-align: center; margin-top: auto; padding-top: 2rem; color: var(--text-muted); font-size: 0.8rem; direction: ltr; }
+        
+        @media (max-width: 1024px) { .studio-grid { grid-template-columns: 1fr; } .app-container { flex-direction: column; } .sidebar { width: 100%; border: none; border-bottom: 1px solid var(--panel-border); } }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo-icon">✨</div>
+                <h2 id="ui-logo">AuraTTS</h2>
+            </div>
+            <div class="sidebar-footer">
+                <button id="theme-toggle" class="theme-btn">☀️ Light Mode</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-text">
+                    <h1 id="ui-title">AI Voice Studio</h1>
+                    <p id="ui-subtitle" class="subtitle">Premium Neural Engine — Strictly Consistent Independent Voices</p>
+                </div>
+                
+                <div class="lang-switch-container">
+                    <button class="switch-btn active" id="switch-en">English</button>
+                    <button class="switch-btn" id="switch-ur">اردو</button>
+                </div>
+            </header>
+
+            <div class="studio-grid">
+                <section class="control-panel">
+                    <div class="panel-card">
+                        <div class="panel-header-inline">
+                            <span class="engine-badge" id="ui-badge">Edge Neural Active</span>
+                            <h3 class="panel-title" id="ui-panel-title">Select AI Voice Model</h3>
+                        </div>
+                        <div class="voice-grid" id="voice-container"></div>
+                    </div>
+                </section>
+
+                <section class="workspace-panel">
+                    <div class="panel-card textarea-card">
+                        <div class="textarea-header">
+                            <span class="status-indicator" id="status-text">Ready</span>
+                            <div class="utility-actions">
+                                <button id="btn-copy" class="util-btn">Copy</button>
+                                <button id="btn-clear" class="util-btn">Clear</button>
+                            </div>
+                        </div>
+
+                        <textarea id="text-input" placeholder="Type or paste text here..." maxlength="2000"></textarea>
+                        
+                        <div class="textarea-footer">
+                            <div class="counter-container"><span id="char-count">0</span>/2000</div>
+                            <div class="waveform-loader" id="waveform-anim">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-card action-card">
+                        <audio id="audio-engine" style="display: none;"></audio>
+                        <div class="media-controls">
+                            <button id="btn-generate" class="primary-btn">Generate Audio</button>
+                            
+                            <div class="playback-cluster">
+                                <button id="btn-pause" class="control-btn" disabled>⏸</button>
+                                <button id="btn-resume" class="control-btn" disabled>▶</button>
+                                <button id="btn-stop" class="control-btn" disabled>⏹</button>
+                            </div>
+
+                            <button id="btn-download" class="secondary-btn" disabled>Download MP3</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <footer class="app-footer">
+                <p>&copy; 2026 AuraTTS Hub. All Rights Reserved.</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // انگریزی اور اردو دونوں کا ڈیٹا پیک
+        const localizedData = {
+            en: {
+                logo: "AuraTTS", title: "AI Voice Studio", subtitle: "Premium Neural Engine — Strictly Consistent Independent Voices",
+                panelTitle: "Select AI Voice Model (5 Locked Voices)", badge: "Edge Neural Active", statusReady: "Ready",
+                statusWorking: "Generating Voice File...", statusPlay: "Playing Audio", statusPause: "Paused",
+                btnCopy: "Copy", btnClear: "Clear", btnGenerate: "Generate Audio", btnDownload: "Download MP3",
+                placeholder: "Type or paste text here to generate premium locked voice output...",
+                toastClear: "Workspace cleared", toastCopy: "Text copied to clipboard!", toastNoText: "Please input text.",
+                toastSuccess: "Audio processed successfully!", themeLight: "☀️ Light Mode", themeDark: "🌙 Dark Mode",
+                voices: [
+                    { id: "en_voice_1", name: "Ava (AI)", gender: "Female", desc: "US Accent — Perfect for crisp narration." },
+                    { id: "en_voice_2", name: "Andrew (AI)", gender: "Male", desc: "US Accent — Deep, warm voice for storytelling." },
+                    { id: "en_voice_3", name: "Sonia (AI)", gender: "Female", desc: "UK Accent — Formal, clear corporate delivery." },
+                    { id: "en_voice_4", name: "Ryan (AI)", gender: "Male", desc: "UK Accent — Rich professional presentation." },
+                    { id: "en_voice_5", name: "Natasha (AI)", gender: "Female", desc: "AU Accent — Natural, calm, smooth cadence." }
+                ]
+            },
+            ur: {
+                logo: "اردو اسٹوڈیو", title: "AI اردو اسپیچ اسٹوڈیو", subtitle: "پریمیم نیورل انجن — 5 الگ اور مستقل آوازیں",
+                panelTitle: "آواز کا انتخاب کریں (5 فکسڈ آوازیں)", badge: "حقیقی اردو نیورل ایکٹو", statusReady: "تیار ہے",
+                statusWorking: "آڈیو فائل تیار ہو رہی ہے...", statusPlay: "آڈیو چل رہی ہے...", statusPause: "روک دی گئی ہے",
+                btnCopy: "کاپی کریں", btnClear: "صاف کریں", btnGenerate: "آڈیو تیار کریں", btnDownload: "ڈاؤن لوڈ MP3",
+                placeholder: "آڈیو بنانے کے لیے یہاں اپنا اردو متن لکھیں یا پیسٹ کریں...",
+                toastClear: "ٹیکسٹ صاف کر دیا گیا", toastCopy: "متن کاپی کر لیا گیا ہے!", toastNoText: "براہ کرم متن لکھیں۔",
+                toastSuccess: "آڈیو کامیابی کے ساتھ تیار ہو گئی ہے!", themeLight: "☀️ لائٹ موڈ", themeDark: "🌙 ڈارک موڈ",
+                voices: [
+                    { id: "ur_voice_1", name: "عظمیٰ (Uzma)", gender: "خاتون (PK)", desc: "پاکستانی لہجہ — معلوماتی اور صاف گفتگو کے لیے بہترین۔" },
+                    { id: "ur_voice_2", name: "اسد (Asad)", gender: "مرد (PK)", desc: "پاکستانی لہجہ — گہری، سنجیدہ اور دستاویزی آواز۔" },
+                    { id: "ur_voice_3", name: "گل (Gul)", gender: "خاتون (IN)", desc: "انڈین اردو لہجہ — نرم، دھیما اور ادبی اندازِ بیان۔" },
+                    { id: "ur_voice_4", name: "سلمان (Salman)", gender: "مرد (IN)", desc: "انڈین اردو لہجہ — کلاسک اور روایتی ریڈیو آواز۔" },
+                    { id: "ur_voice_5", name: "ثنا (Sana - News)", gender: "خاتون (PK)", desc: "خبروں اور تیز رفتار لائیو رپورٹنگ کا مخصوص انداز۔" }
+                ]
+            }
+        };
+
+        let currentLang = "en";
+        let selectedVoiceId = "en_voice_1";
+        let serverGeneratedFilename = null;
+
+        const textInput = document.getElementById('text-input');
+        const charCount = document.getElementById('char-count');
+        const voiceContainer = document.getElementById('voice-container');
+        const statusText = document.getElementById('status-text');
+        const waveformAnim = document.getElementById('waveform-anim');
+        const audioEngine = document.getElementById('audio-engine');
+
+        const btnGenerate = document.getElementById('btn-generate');
+        const btnPause = document.getElementById('btn-pause');
+        const btnResume = document.getElementById('btn-resume');
+        const btnStop = document.getElementById('btn-stop');
+        const btnDownload = document.getElementById('btn-download');
+        const btnClear = document.getElementById('btn-clear');
+        const btnCopy = document.getElementById('btn-copy');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        document.addEventListener("DOMContentLoaded", () => {
+            switchLanguage("en");
+            setupEventListeners();
+        });
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            selectedVoiceId = lang === "en" ? "en_voice_1" : "ur_voice_1";
+            
+            // Apply Layout adjustments based on mode
+            if(lang === "ur") {
+                document.body.classList.add('rtl-mode');
+            } else {
+                document.body.classList.remove('rtl-mode');
+            }
+
+            // Update UI elements from object dictionary
+            const dict = localizedData[lang];
+            document.getElementById('ui-logo').textContent = dict.logo;
+            document.getElementById('ui-title').textContent = dict.title;
+            document.getElementById('ui-subtitle').textContent = dict.subtitle;
+            document.getElementById('ui-panel-title').textContent = dict.panelTitle;
+            document.getElementById('ui-badge').textContent = dict.badge;
+            statusText.textContent = dict.statusReady;
+            
+            btnCopy.textContent = dict.btnCopy;
+            btnClear.textContent = dict.btnClear;
+            btnGenerate.textContent = dict.btnGenerate;
+            btnDownload.textContent = dict.btnDownload;
+            textInput.placeholder = dict.placeholder;
+
+            renderVoiceGrid();
+            resetPlaybackUI();
+        }
+
+        function renderVoiceGrid() {
+            voiceContainer.innerHTML = "";
+            const voices = localizedData[currentLang].voices;
+            
+            voices.forEach(voice => {
+                const isSelected = voice.id === selectedVoiceId;
+                const card = document.createElement('div');
+                card.className = `voice-card ${isSelected ? 'active' : ''}`;
+                card.dataset.id = voice.id;
+                card.innerHTML = `
+                    <div class="voice-avatar">${voice.gender.includes('Female') || voice.gender.includes('خاتون') ? '👩‍💼' : '👨‍💼'}</div>
+                    <div class="voice-info">
+                        <div class="voice-meta-header">
+                            <span class="voice-name">${voice.name}</span>
+                            <span class="voice-gender">${voice.gender}</span>
+                        </div>
+                        <p class="voice-desc">${voice.desc}</p>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    selectedVoiceId = voice.id;
+                    document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                });
+                voiceContainer.appendChild(card);
+            });
+        }
+
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('switch-en').addEventListener('click', (e) => {
+                document.getElementById('switch-ur').classList.remove('active');
+                e.target.classList.add('active');
+                switchLanguage('en');
+            });
+
+            document.getElementById('switch-ur').addEventListener('click', (e) => {
+                document.getElementById('switch-en').classList.remove('active');
+                e.target.classList.add('active');
+                switchLanguage('ur');
+            });
+
+            textInput.addEventListener('input', () => charCount.textContent = textInput.value.length);
+            btnClear.addEventListener('click', () => { textInput.value = ""; charCount.textContent = 0; showToast(localizedData[currentLang].toastClear); });
+            btnCopy.addEventListener('click', () => {
+                if(!textInput.value.trim()) return;
+                navigator.clipboard.writeText(textInput.value);
+                showToast(localizedData[currentLang].toastCopy);
+            });
+
+            btnGenerate.addEventListener('click', async () => {
+                const text = textInput.value.trim();
+                const dict = localizedData[currentLang];
+                if(!text) return showToast(dict.toastNoText, "error");
+
+                const currentVoiceSnapshot = selectedVoiceId;
+
+                try {
+                    statusText.textContent = dict.statusWorking;
+                    statusText.classList.add('working');
+                    waveformAnim.classList.add('active');
+                    btnGenerate.disabled = true;
+
+                    const response = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: text, voice_id: currentVoiceSnapshot })
+                    });
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        if(result.verified_voice_id === selectedVoiceId) {
+                            audioEngine.src = result.audio_url;
+                            serverGeneratedFilename = result.filename;
+                            audioEngine.play();
+                            btnPause.disabled = false;
+                            btnStop.disabled = false;
+                            btnDownload.disabled = false;
+                            showToast(dict.toastSuccess);
+                        }
+                    } else {
+                        throw new Error(result.error || "Generation pipeline error");
+                    }
+                } catch (err) {
+                    statusText.textContent = "Error";
+                    showToast(err.message, "error");
+                    resetPlaybackUI();
+                } finally {
+                    btnGenerate.disabled = false;
+                    waveformAnim.classList.remove('active');
+                }
+            });
+
+            audioEngine.addEventListener('play', () => { waveformAnim.classList.add('active'); statusText.textContent = localizedData[currentLang].statusPlay; });
+            audioEngine.addEventListener('pause', () => { waveformAnim.classList.remove('active'); statusText.textContent = localizedData[currentLang].statusPause; });
+            audioEngine.addEventListener('ended', () => { resetPlaybackUI(); });
+
+            btnPause.addEventListener('click', () => { audioEngine.pause(); btnPause.disabled = true; btnResume.disabled = false; });
+            btnResume.addEventListener('click', () => { audioEngine.play(); btnResume.disabled = true; btnPause.disabled = false; });
+            btnStop.addEventListener('click', () => { audioEngine.pause(); audioEngine.currentTime = 0; resetPlaybackUI(); });
+            
+            btnDownload.addEventListener('click', () => { 
+                if(serverGeneratedFilename) window.location.href = `/api/download/${serverGeneratedFilename}`; 
+            });
+
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+                themeToggle.textContent = isDark ? localizedData[currentLang].themeLight : localizedData[currentLang].themeDark;
+            });
+        }
+
+        function resetPlaybackUI() {
+            btnPause.disabled = true;
+            btnResume.disabled = true;
+            btnStop.disabled = true;
+            statusText.textContent = localizedData[currentLang].statusReady;
+            statusText.classList.remove('working');
+            waveformAnim.classList.remove('active');
+        }
+    </script>
+</body>
+</html> 
