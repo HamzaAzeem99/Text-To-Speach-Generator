@@ -1221,7 +1221,13 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text: text, voice_id: currentVoiceSnapshot })
                     });
-                    const result = await response.json();
+                    
+                    let result;
+                    try {
+                        result = await response.json();
+                    } catch (e) {
+                        throw new Error(`Server error: Status ${response.status}`);
+                    }
 
                     if (response.ok && result.success) {
                         if(result.verified_voice_id === selectedVoiceId) {
@@ -1233,7 +1239,7 @@
                             showToast(dict.toastSuccess);
                         }
                     } else {
-                        throw new Error(result.error || "Generation pipeline error");
+                        throw new Error(result.error || `Generation error: Status ${response.status}`);
                     }
                 } catch (err) {
                     statusText.textContent = "Error";

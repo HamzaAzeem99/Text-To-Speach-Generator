@@ -2,6 +2,7 @@ import os
 import asyncio
 import tempfile
 import base64
+import traceback
 from flask import Flask, render_template, request, jsonify
 import edge_tts
 
@@ -29,6 +30,19 @@ async def generate_voice_file(text, voice_name, filepath, is_news=False):
     communicate = edge_tts.Communicate(text, voice_name, rate=rate)
     await communicate.save(filepath)
 
+def run_async(coro):
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+    if loop.is_closed():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+    return loop.run_until_complete(coro)
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -55,7 +69,7 @@ def text_to_speech():
         
         try:
             # آڈیو فائل جنریٹ کریں
-            asyncio.run(generate_voice_file(text, edge_voice, temp_path, is_news))
+            run_async(generate_voice_file(text, edge_voice, temp_path, is_news))
             
             # Read and encode the file to Base64
             with open(temp_path, 'rb') as f:
@@ -76,7 +90,8 @@ def text_to_speech():
         })
         
     except Exception as e:
-        return jsonify({"error": f"Server Error: {str(e)}"}), 500
+        tb = traceback.format_exc()
+        return jsonify({"error": f"Server Error: {str(e)}", "traceback": tb}), 500
 
 if __name__ == '__main__':
     app.run(port=5001)
