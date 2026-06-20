@@ -1,13 +1,11 @@
 import os
-import uuid
 import asyncio
-from flask import Flask, render_template, request, jsonify, send_file
+import tempfile
+import base64
+from flask import Flask, render_template, request, jsonify
 import edge_tts
 
 app = Flask(__name__)
-
-AUDIO_DIR = os.path.join('static', 'audio')
-os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # دونوں زبانوں کی 5+5 بالکل الگ اور مستقل نیورل آوازیں
 VOICE_MAPPING = {
@@ -51,36 +49,35 @@ def text_to_speech():
         edge_voice = VOICE_MAPPING[voice_id]
         is_news = (voice_id == "ur_voice_5")
         
-        # پرانی فائلیں ڈیلیٹ کریں
-        for f in os.listdir(AUDIO_DIR):
-            try:
-                os.remove(os.path.join(AUDIO_DIR, f))
-            except Exception:
-                pass
-
-        filename = f"{voice_id}_{uuid.uuid4().hex}.mp3"
-        filepath = os.path.join(AUDIO_DIR, filename)
+        # Create a temporary file to save the audio
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_file:
+            temp_path = temp_file.name
         
-        # آڈیو فائل جنریٹ کریں
-        asyncio.run(generate_voice_file(text, edge_voice, filepath, is_news))
+        try:
+            # آڈیو فائل جنریٹ کریں
+            asyncio.run(generate_voice_file(text, edge_voice, temp_path, is_news))
+            
+            # Read and encode the file to Base64
+            with open(temp_path, 'rb') as f:
+                audio_bytes = f.read()
+            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+        finally:
+            # Clean up the temporary file immediately
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
         
         return jsonify({
             "success": True,
-            "audio_url": f"/static/audio/{filename}",
-            "filename": filename,
+            "audio_base64": f"data:audio/mp3;base64,{audio_base64}",
             "verified_voice_id": voice_id
         })
         
     except Exception as e:
         return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
-@app.route('/api/download/<filename>', methods=['GET'])
-def download_audio(filename):
-    filepath = os.path.join(AUDIO_DIR, filename)
-    if os.path.exists(filepath):
-        return send_file(filepath, as_attachment=True, download_name="synthesized_speech.mp3")
-    return jsonify({"error": "Audio file not found"}), 404
-
 if __name__ == '__main__':
-    app.run()
+    app.run(port=5001)
 app = app    
